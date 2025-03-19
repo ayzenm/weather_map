@@ -5,7 +5,6 @@ import plotly.express as px
 import requests
 from joblib import Parallel, delayed
 
-
 seasonal_temperatures = {
     "New York": {"winter": 0, "spring": 10, "summer": 25, "autumn": 15},
     "London": {"winter": 5, "spring": 11, "summer": 18, "autumn": 12},
@@ -24,13 +23,11 @@ seasonal_temperatures = {
     "Mexico City": {"winter": 12, "spring": 18, "summer": 20, "autumn": 15},
 }
 
-# Сопоставление месяцев с сезонами
 month_to_season = {12: "winter", 1: "winter", 2: "winter",
                    3: "spring", 4: "spring", 5: "spring",
                    6: "summer", 7: "summer", 8: "summer",
                    9: "autumn", 10: "autumn", 11: "autumn"}
 
-# Генерация данных о температуре
 def generate_realistic_temperature_data(cities, num_years=10):
     dates = pd.date_range(start="2010-01-01", periods=365 * num_years, freq="D")
     data = []
@@ -39,6 +36,7 @@ def generate_realistic_temperature_data(cities, num_years=10):
         for date in dates:
             season = month_to_season[date.month]
             mean_temp = seasonal_temperatures[city][season]
+            # Add random deviation
             temperature = np.random.normal(loc=mean_temp, scale=5)
             data.append({"city": city, "timestamp": date, "temperature": temperature})
 
@@ -65,7 +63,7 @@ def main():
         df = pd.read_csv(uploaded_file, parse_dates=["timestamp"])
         df.sort_values("timestamp", inplace=True)
 
-        df["rolling_mean"] = df.groupby("city")["temperature"].apply(
+        df["rolling_mean"] = df.groupby("city")["temperature"].transform(
             lambda x: x.rolling(30, min_periods=1).mean()
         )
 
@@ -90,7 +88,6 @@ def main():
                       title=f"Temperature Time Series ({city})")
         st.plotly_chart(fig)
 
-        # Секция API OpenWeatherMap
         st.subheader("Current Temperature via OpenWeatherMap (optional)")
         api_key = st.text_input("Enter your OpenWeatherMap API Key", type="password")
         if api_key:
@@ -99,7 +96,6 @@ def main():
             if res.status_code == 200:
                 current_temp = res.json()["main"]["temp"]
                 st.write(f"Current temperature in {city}: {current_temp} °C")
-                # Сравнение с историческими данными (приблизительно по текущему месяцу)
                 current_month = pd.to_datetime("now").month
                 st.write("Comparison with historical data is approximate. Adjust logic for precise season detection.")
             else:
